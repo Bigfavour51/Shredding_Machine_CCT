@@ -2,6 +2,20 @@
 
 
 
+int temperature {};
+String MOTOR_STATE = "OFF"; // Variable to store the motor state
+String ALARM_BUZZER_STATE = "OFF"; // Variable to store the alarm buzzer state
+String START_BUTTON_STATE = "OFF"; // Variable to store the start button state
+String STOP_BUTTON_STATE = "OFF"; // Variable to store the stop button state
+
+
+String CYD_START_BUTTON_STATE = "OFF";
+String CYD_STOP_BUTTON_STATE = "OFF";
+
+float slaveValues[NUM_THRESHOLDS];
+
+int UART_SYS_STATUS = 0; // Variable to store the system status
+
 MAX6675 thermocouple(MAX6675_SCK_PIN, MAX6675_MISO_PIN, MAX6675_CS_PIN);
 
 void abacha_system_setup() {
@@ -12,7 +26,7 @@ void abacha_system_setup() {
   pinMode(START_BUTTON_PIN, INPUT_PULLUP);
   pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
 
-    digitalWrite(MOTOR_PIN, MOTOR_OFF); // Ensure the motor is off at startup
+    digitalWrite(MOTOR_PIN, MOTOR_ON); // Ensure the motor is off at startup
     digitalWrite(ALARM_BUZZER_PIN, ALARM_BUZZER_OFF); // Ensure the alarm buzzer is off at startup
     Serial.println("System setup complete.");
     delay(1000); // Delay for stability

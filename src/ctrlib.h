@@ -18,7 +18,6 @@ added to this library are:
 
 // Included the necessary libraries
 #include <Arduino.h>
-#include <Wire.h>
 #include <SPI.h>
 #include <max6675.h>
 
@@ -53,26 +52,26 @@ void start_alarm();
 void stop_alarm();
 void master_uart_send();
 int system_guard();
-void sysOP();
+extern void sysOP();
 
 
-int temperature {};
-String MOTOR_STATE = "OFF"; // Variable to store the motor state
-String ALARM_BUZZER_STATE = "OFF"; // Variable to store the alarm buzzer state
-String START_BUTTON_STATE = "OFF"; // Variable to store the start button state
-String STOP_BUTTON_STATE = "OFF"; // Variable to store the stop button state
+extern int temperature;
+extern String MOTOR_STATE ; // Variable to store the motor state
+extern String ALARM_BUZZER_STATE; // Variable to store the alarm buzzer state
+extern String START_BUTTON_STATE; // Variable to store the start button state
+extern String STOP_BUTTON_STATE; // Variable to store the stop button state
 
 
 
-String CYD_START_BUTTON_STATE = "OFF";
-String CYD_STOP_BUTTON_STATE = "OFF";
+extern String CYD_START_BUTTON_STATE;
+extern String CYD_STOP_BUTTON_STATE;
 
 
 #define NUM_THRESHOLDS 2
 #define INPUT_BUFFER_SIZE 64
 #define MSG_HEADER '#' // optional: use for identifying start of command
 #define MSG_TERMINATOR '\n'
-float slaveValues[NUM_THRESHOLDS];
+extern float slaveValues[];
 
 
 #define WARNING_STATUS_TEMP 50 // Variable to store the warning status
@@ -81,8 +80,7 @@ float slaveValues[NUM_THRESHOLDS];
 #define WARNING_STATUS 0
 #define DANGER_STATUS 0
 #define NORMAL_STATUS 0
-#define UART_SYS_STATUS 0
-
+extern int UART_SYS_STATUS;
 
 
 #endif
