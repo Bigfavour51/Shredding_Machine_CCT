@@ -19,14 +19,15 @@ int UART_SYS_STATUS = 0; // Variable to store the system status
 MAX6675 thermocouple(MAX6675_SCK_PIN, MAX6675_MISO_PIN, MAX6675_CS_PIN);
 
 void abacha_system_setup() {
-  
+  SPI.begin(); // Initialize SPI communication
+  thermocouple.begin(); // Initialize the MAX6675 thermocouple
   Serial.begin(9600);
   pinMode(MOTOR_PIN, OUTPUT);
   pinMode(ALARM_BUZZER_PIN, OUTPUT);
   pinMode(START_BUTTON_PIN, INPUT_PULLUP);
   pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
 
-    digitalWrite(MOTOR_PIN, MOTOR_OFF); // Ensure the motor is off at startup
+    digitalWrite(MOTOR_PIN, MOTOR_ON); // Ensure the motor is off at startup
     digitalWrite(ALARM_BUZZER_PIN, ALARM_BUZZER_OFF); // Ensure the alarm buzzer is off at startup
     Serial.println("System setup complete.");
     delay(1000); // Delay for stability

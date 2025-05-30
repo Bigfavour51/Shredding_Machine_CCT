@@ -1,12 +1,11 @@
 #include "ctrlib.h"
 
 
-
-int temperature {};
+int temperature {20};
 String MOTOR_STATE = "OFF"; // Variable to store the motor state
-String ALARM_BUZZER_STATE = "OFF"; // Variable to store the alarm buzzer state
+String ALARM_BUZZER_STATE = "ON"; // Variable to store the alarm buzzer state
 String START_BUTTON_STATE = "OFF"; // Variable to store the start button state
-String STOP_BUTTON_STATE = "OFF"; // Variable to store the stop button state
+String STOP_BUTTON_STATE = "ON"; // Variable to store the stop button state
 
 
 String CYD_START_BUTTON_STATE = "OFF";
@@ -16,39 +15,46 @@ float slaveValues[NUM_THRESHOLDS];
 
 int UART_SYS_STATUS = 0; // Variable to store the system status
 
-MAX6675 thermocouple(MAX6675_SCK_PIN, MAX6675_MISO_PIN, MAX6675_CS_PIN);
+MAX6675 thermocouple(MAX6675_CS_PIN, MAX6675_MISO_PIN, MAX6675_SCK_PIN);
+
 
 void abacha_system_setup() {
-  
-  Serial.begin(9600);
+  Serial2.begin(9600);
+
   pinMode(MOTOR_PIN, OUTPUT);
   pinMode(ALARM_BUZZER_PIN, OUTPUT);
   pinMode(START_BUTTON_PIN, INPUT_PULLUP);
   pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
 
-    digitalWrite(MOTOR_PIN, MOTOR_ON); // Ensure the motor is off at startup
-    digitalWrite(ALARM_BUZZER_PIN, ALARM_BUZZER_OFF); // Ensure the alarm buzzer is off at startup
-    Serial.println("System setup complete.");
-    delay(1000); // Delay for stability
+  digitalWrite(MOTOR_PIN, MOTOR_ON); // Ensure the motor is off at startup
+  digitalWrite(ALARM_BUZZER_PIN, ALARM_BUZZER_OFF); // Ensure the alarm buzzer is off at startup
+
+  SPI.begin(); // Initialize SPI communication
+  thermocouple.begin(); // Initialize the MAX6675 thermocouple
+  delay(500); // Delay for stability
+
 }
 
-int read_temperature() {
-  temperature = thermocouple.readCelsius();
+int read_temperature() 
+{
+
+  int status = thermocouple.read();
+  if (status != STATUS_OK)
+  {
+   return 404;
+  }
+    temperature = thermocouple.getCelsius();
     if(!isnan(temperature)) {
-        Serial.print("Temperature: ");
-        Serial.print(temperature);
-        Serial.println(" °C");
+       
         return temperature;
     } else {
-        Serial.println("Error reading temperature.");
         return {};
     }
+
 }
 
 void control_motor(int state) {
   digitalWrite(MOTOR_PIN, state);
-  Serial.print("Motor ");
-  Serial.println(state == MOTOR_ON ? "ON" : "OFF");
   MOTOR_STATE = (state == MOTOR_ON) ? "ON" : "OFF"; // Update motor state
 }
 
@@ -62,8 +68,6 @@ void stop_motor() {
 
 void alarm_buzzer(int state) {
   digitalWrite(ALARM_BUZZER_PIN, state);
-  Serial.print("Alarm Buzzer ");
-  Serial.println(state == ALARM_BUZZER_ON ? "ON" : "OFF");
   ALARM_BUZZER_STATE = (state == ALARM_BUZZER_ON) ? "ON" : "OFF"; // Update alarm buzzer state
 }
 
@@ -92,18 +96,17 @@ void sysOP()
     }
 }
 
-
 int system_guard()
 {
     // This function is meant to send a "warning" to the screen when the Motor temperature is high and a "danger" when the temperature is too high
     if (temperature > WARNING_STATUS_TEMP) {
-        Serial.println("Warning: High temperature detected!");
+        //Serial.println("Warning: High temperature detected!");
         return (WARNING_STATUS + 1);
     } else if (temperature > DANGER_STATUS_TEMP) {
-        Serial.println("Danger: Critical temperature reached!");
+       // Serial.println("Danger: Critical temperature reached!");
         return (DANGER_STATUS + 2);
     } else {
-        Serial.println("Temperature is normal.");
+        //Serial.println("Temperature is normal.");
         return (NORMAL_STATUS + 3);
     }
 }
@@ -113,13 +116,13 @@ void master_uart_send() {
                     String(ALARM_BUZZER_STATE) + "," + String(START_BUTTON_STATE) + "," +
                     String(STOP_BUTTON_STATE) + String(UART_SYS_STATUS) + "," +"\n";
 
-  Serial.print(response); // send to slave
+  Serial2.print(response); // send to slave
 
 
      String input = "";
 
-    while (Serial.available()) {
-        char c = Serial.read();
+    while (Serial2.available()) {
+        char c = Serial2.read();
 
         // Optional: skip garbage before the start character
         if (input.length() == 0 && c != MSG_HEADER) {
@@ -154,7 +157,7 @@ void master_uart_send() {
                 
 
             }
-            // input = ""; // reset input buffer
+            input = ""; // reset input buffer
         }
     }
   delay(1000); // Optional delay for stability
