@@ -7,53 +7,26 @@ String ALARM_BUZZER_STATE = "ON"; // Variable to store the alarm buzzer state
 String START_BUTTON_STATE = "OFF"; // Variable to store the start button state
 String STOP_BUTTON_STATE = "ON"; // Variable to store the stop button state
 
-
 String CYD_START_BUTTON_STATE = "OFF";
 String CYD_STOP_BUTTON_STATE = "OFF";
 
 float slaveValues[NUM_THRESHOLDS];
-
 int UART_SYS_STATUS = 0; // Variable to store the system status
 
-MAX6675 thermocouple(MAX6675_CS_PIN, MAX6675_MISO_PIN, MAX6675_SCK_PIN);
-
-
-void abacha_system_setup() {
-  Serial2.begin(9600);
-
+void abacha_shredder_setup()
+{
+  Serial.begin(9600);         // Debug via USB
+  Serial1.begin(115200);      // UART communication to slave (PA9/PA10)
   pinMode(MOTOR_PIN, OUTPUT);
   pinMode(ALARM_BUZZER_PIN, OUTPUT);
-  pinMode(START_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(STOP_BUTTON_PIN, INPUT_PULLUP);
-
-  digitalWrite(MOTOR_PIN, MOTOR_ON); // Ensure the motor is off at startup
-  digitalWrite(ALARM_BUZZER_PIN, ALARM_BUZZER_OFF); // Ensure the alarm buzzer is off at startup
-
-  SPI.begin(); // Initialize SPI communication
-  thermocouple.begin(); // Initialize the MAX6675 thermocouple
-  delay(500); // Delay for stability
-
+  digitalWrite(MOTOR_PIN, LOW);
+  digitalWrite(ALARM_BUZZER_PIN, LOW);
+  delay(2000);
+  Serial.println("STM32 Master ready.");
 }
 
-int read_temperature() 
+void control_motor(int state) 
 {
-
-  int status = thermocouple.read();
-  if (status != STATUS_OK)
-  {
-   return 404;
-  }
-    temperature = thermocouple.getCelsius();
-    if(!isnan(temperature)) {
-       
-        return temperature;
-    } else {
-        return {};
-    }
-
-}
-
-void control_motor(int state) {
   digitalWrite(MOTOR_PIN, state);
   MOTOR_STATE = (state == MOTOR_ON) ? "ON" : "OFF"; // Update motor state
 }
@@ -67,7 +40,7 @@ void stop_motor() {
 }
 
 void alarm_buzzer(int state) {
-  digitalWrite(ALARM_BUZZER_PIN, state);
+  digitalWrite(PB13, state);
   ALARM_BUZZER_STATE = (state == ALARM_BUZZER_ON) ? "ON" : "OFF"; // Update alarm buzzer state
 }
 
@@ -112,54 +85,75 @@ int system_guard()
 }
 
 void master_uart_send() {
-  String response = String('#') + "," + String(temperature) + "," + String(MOTOR_STATE) + "," +
-                    String(ALARM_BUZZER_STATE) + "," + String(START_BUTTON_STATE) + "," +
-                    String(STOP_BUTTON_STATE) + String(UART_SYS_STATUS) + "," +"\n";
+ // === Send to Slave ===
+  String message = String(MSG_HEADER) + "," +
+                   String(temperature) + "," +
+                   MOTOR_STATE + "," +
+                   ALARM_BUZZER_STATE + "," +
+                   START_BUTTON_STATE + "," +
+                   STOP_BUTTON_STATE + "," +
+                   String(UART_SYS_STATUS) + "," +
+                   MSG_TERMINATOR;
 
-  Serial2.print(response); // send to slave
+  Serial1.print(message);
+  Serial.print("Sent to slave: ");
+  Serial.println(message);
 
+  // === Receive from Slave ===
+  static String input = "";
 
-     String input = "";
+  while (Serial1.available()) {
+    char c = Serial1.read();
 
-    while (Serial2.available()) {
-        char c = Serial2.read();
-
-        // Optional: skip garbage before the start character
-        if (input.length() == 0 && c != MSG_HEADER) {
-            continue;
-        }
-
-        input += c;
-
-        // Only process when newline is received
-        if (c == MSG_TERMINATOR) {
-            input.trim();
-
-            // Strip off header if used
-            if (input.charAt(0) == MSG_HEADER) {
-                input.remove(0, 1);  // remove header
-            }
-
-            char inputBuffer[INPUT_BUFFER_SIZE];
-            input.toCharArray(inputBuffer, sizeof(inputBuffer));
-
-            char *token = strtok(inputBuffer, ",");
-            int idx = 0;
-            while (token != NULL && idx < NUM_THRESHOLDS) {
-                slaveValues[idx++] = atof(token);
-                token = strtok(NULL, ",");
-            }
-
-            if (idx == NUM_THRESHOLDS) {
-                // Assign thresholds from master
-                CYD_START_BUTTON_STATE = slaveValues[0];
-                CYD_STOP_BUTTON_STATE = slaveValues[1];
-                
-
-            }
-            input = ""; // reset input buffer
-        }
+    if (input.length() == 0 && c != MSG_HEADER) {
+      continue;
     }
-  delay(1000); // Optional delay for stability
+
+    input += c;
+
+    if (c == MSG_TERMINATOR) {
+      // Remove trailing newline
+      input.remove(input.length() - 1);
+
+      // Remove header
+      if (input.charAt(0) == MSG_HEADER) {
+        input.remove(0, 1);
+      }
+
+      char inputBuffer[INPUT_BUFFER_SIZE];
+      input.toCharArray(inputBuffer, sizeof(inputBuffer));
+
+      char* token = strtok(inputBuffer, ",");
+      int idx = 0;
+
+      while (token != NULL) {
+        if (idx == 0) CYD_START_BUTTON_STATE = String(token);
+        else if (idx == 1) CYD_STOP_BUTTON_STATE = String(token);
+        token = strtok(NULL, ",");
+        idx++;
+      }
+
+      Serial.print("Received from slave: Start=");
+      Serial.print(CYD_START_BUTTON_STATE);
+      Serial.print(", Stop=");
+      Serial.println(CYD_STOP_BUTTON_STATE);
+
+      input = ""; // Reset buffer
+    }
+  }
 }
 
+void cyd_motor_OP()
+{
+  if (CYD_START_BUTTON_STATE == "ON")
+  {
+    start_motor();
+    for(int i {}; i<4; i++)
+    {
+      start_alarm();
+      delay(1000);
+      stop_alarm();
+    }
+    
+  }
+}

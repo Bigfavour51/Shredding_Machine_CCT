@@ -1,3 +1,4 @@
+ 
  /*
 SCOPE OF THE LIBRARY:
 This is a library for the control cct for an Abacha_Shredding Machine. Some funtionalities that will be
@@ -12,7 +13,6 @@ added to this library are:
   and also trigger the alarm buzzer.
 */
 
-
 #ifndef __CTRLIB__
 #define __CTRLIB__
 
@@ -22,12 +22,9 @@ added to this library are:
 #include "MAX6675.h"
 
 
-// Define the pins for the MAX6675 thermocouple
-#define MAX6675_CS_PIN  PA4// PA4 Chip select pin for the MAX6675
-#define MAX6675_SCK_PIN PA5 //   Serial clock pin for the MAX6675 
-#define MAX6675_MISO_PIN PA6 // Master in slave out pin for the MAX6675
+
 // Define the pins for the motor control
-#define MOTOR_PIN  PB4//  Pin for controlling the motor
+#define MOTOR_PIN  PB4 //  Pin for controlling the motor
 #define START_BUTTON_PIN PB3  // Pin for the start button
 #define STOP_BUTTON_PIN  PA8// Pin for the stop button
 
@@ -42,7 +39,7 @@ added to this library are:
 
 
 
-void abacha_system_setup();
+void abacha_shredder_setup();
 int read_temperature();
 void control_motor(int state);
 void start_motor();
@@ -53,6 +50,7 @@ void stop_alarm();
 void master_uart_send();
 int system_guard();
 extern void sysOP();
+void cyd_motor_OP();
 
 
 extern int temperature;
