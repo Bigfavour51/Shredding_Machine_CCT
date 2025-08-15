@@ -5,7 +5,7 @@
 
 
 #define BUTTON_PIN        PB4
-#define MOTOR_RELAY_PIN   PB3
+#define MOTOR_RELAY_PIN   PA0
 #define HOPPER_LIMIT_SWITCH_PIN PA15
 #define Buzzer_PIN PB13 
 
@@ -20,7 +20,10 @@ extern const unsigned long debounceDelay;
 void system_setup();
 void toggleMotor();
 void checkHopperLimitSwitch();
+;
 
+void readHopper();
+void readButton();
 
 
 #endif // __STSTEMCTRL_H__

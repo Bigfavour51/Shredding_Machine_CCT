@@ -30,10 +30,11 @@ void system_setup()
 {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(MOTOR_RELAY_PIN, OUTPUT);
-  digitalWrite(MOTOR_RELAY_PIN, HIGH); // Start with LED OFF
+  digitalWrite(MOTOR_RELAY_PIN, HIGH); // Start with MOTOR OFF
+
   pinMode(HOPPER_LIMIT_SWITCH_PIN, INPUT_PULLUP); // Set limit switch pin as input with pull-up resistor
   pinMode(Buzzer_PIN, OUTPUT); // Set buzzer pin as output
-  digitalWrite(Buzzer_PIN, HIGH); // Start with buzzer OFF
+  digitalWrite(Buzzer_PIN, LOW); // Start with buzzer OFF
   Serial.begin(9600);
   Serial.println("System Ready");
 }
@@ -51,20 +52,22 @@ void toggleMotor()
       digitalWrite(MOTOR_RELAY_PIN, relayState ? LOW : HIGH);
       if (relayState) {
         for(int i = 0; i <= 3; i++) {
-          digitalWrite(Buzzer_PIN, LOW);
-          delay(200);
           digitalWrite(Buzzer_PIN, HIGH);
+          delay(200);
+          digitalWrite(Buzzer_PIN, LOW);
           delay(200);
         }
       } else {
-        digitalWrite(Buzzer_PIN, HIGH); // Stop the buzzer when motor is OFF
+        digitalWrite(Buzzer_PIN, LOW); // Stop the buzzer when motor is OFF
       }
       Serial.println(relayState ? "Motor ON" : "Motor OFF");
-    } else {
+    } 
+    
+    else {
       for (int i = 0; i <=3; i++) { // Beep 3 times if hopper is open
-        digitalWrite(Buzzer_PIN, LOW);
-        delay(200);
         digitalWrite(Buzzer_PIN, HIGH);
+        delay(200);
+        digitalWrite(Buzzer_PIN, LOW);
         delay(200);
       }
       digitalWrite(MOTOR_RELAY_PIN, HIGH); // Ensure motor is OFF
